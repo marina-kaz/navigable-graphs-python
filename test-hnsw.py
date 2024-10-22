@@ -14,6 +14,9 @@ random.seed(108)
 from hnsw import HNSW
 from hnsw import l2_distance, heuristic
 
+import json
+from pathlib import Path
+
 
 def brute_force_knn_search(distance_func, k, q, data):
     """
@@ -139,6 +142,10 @@ def main():
         "--m", type=int, default=3, help="Number of random entry points."
     )
 
+    parser.add_argument(
+        "--o", type=Path, default=None, help="Chart output"
+    )
+
     args = parser.parse_args()
 
     # Load dataset
@@ -167,6 +174,18 @@ def main():
     )
     print(f"Average recall: {recall}, avg calc: {avg_cal}")
 
+
+    if args.o is not None:
+        print(f"Starting chart construction")
+        results = {}
+        for ef in [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]:
+            recall, avg_cal = calculate_recall(
+                    l2_distance, hnsw, test_data, groundtruth_data, k=args.k, ef=ef, m=args.m
+                )
+            results[ef] = {'recall': recall, 'cal': avg_cal}
+
+        with open(args.o, 'w', encoding='utf-8') as chart_file:
+            json.dump(results, chart_file, indent=6)    
 
 if __name__ == "__main__":
     main()
